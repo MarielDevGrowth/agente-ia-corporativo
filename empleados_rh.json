@@ -1,0 +1,13 @@
+[
+    {"puesto": "encargado", "nombre": "Claudio Fernandez", "edad": 45, "turno": "Manana"},
+    {"puesto": "encargado", "nombre": "Patricia Gomez", "edad": 42, "turno": "Tarde"},
+    {"puesto": "barista", "nombre": "Lucas Martinez", "edad": 26, "turno": "Manana"},
+    {"puesto": "barista", "nombre": "Sofia Rodriguez", "edad": 28, "turno": "Tarde"},
+    {"puesto": "mozo", "nombre": "Mateo Silva", "edad": 24, "turno": "Manana"},
+    {"puesto": "mozo", "nombre": "Camila Benitez", "edad": 25, "turno": "Manana"},
+    {"puesto": "mozo", "nombre": "Bruno Diaz", "edad": 29, "turno": "Tarde"},
+    {"puesto": "mozo", "nombre": "Elena Paz", "edad": 27, "turno": "Tarde"},
+    {"puesto": "maestranza", "nombre": "Jorge Lopez", "edad": 30, "turno": "Manana"},
+    {"puesto": "maestranza", "nombre": "Marta Quiroga", "edad": 26, "turno": "Tarde"}
+  ]
+  

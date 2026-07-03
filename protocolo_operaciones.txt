@@ -1,0 +1,3 @@
+protocolo_higiene: El personal debe lavarse las manos cada 30 minutos y usar delantal limpio.
+protocolo_servicio: La atencion en el mostrador siempre debe iniciar con un saludo amable.
+norma_seguridad: Ante cualquier falla de las maquinas de cafe, avisar de inmediato al supervisor.
