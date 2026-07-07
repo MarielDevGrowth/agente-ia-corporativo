@@ -3,7 +3,46 @@ import json
 import time
 
 # =========================================================
-# 1. CAPA VISUAL Y SIMULACIÓN DE WHATSAPP (Formato Estético)
+# 0. TRUCO AUTOMÁTICO: CREACIÓN DE ARCHIVOS EN LA NUBE
+# =========================================================
+
+# 1. Crear el archivo CSV de Atención
+contenido_csv = [
+    ["pregunta", "respuesta"],
+    ["producto mas vendido diciembre 2015", "El producto mas vendido en diciembre de 2015 fue el Smartphone X con 1500 unidades."],
+    ["horario de atencion", "El horario de atencion en el mostrador es de lunes a viernes de 9 a 18 horas."]
+]
+with open('datos_empresa.csv', mode='w', newline='', encoding='utf-8') as f:
+    csv.writer(f).writerows(contenido_csv)
+
+# 2. Crear el archivo TXT de Operaciones
+contenido_txt = (
+    "protocolo_higiene: El personal debe lavarse las manos cada 30 minutos y usar delantal limpio.\n"
+    "protocolo_servicio: La atencion en el mostrador siempre debe iniciar con un saludo amable.\n"
+    "norma_seguridad: Ante cualquier falla de las maquinas de cafe, avisar de inmediato al supervisor.\n"
+)
+with open('protocolo_operaciones.txt', mode='w', encoding='utf-8') as f:
+    f.write(contenido_txt)
+
+# 3. Crear el archivo JSON de Recursos Humanos
+contenido_json = [
+  {"puesto": "encargado", "nombre": "Claudio Fernandez", "edad": 45, "turno": "Manana"},
+  {"puesto": "encargado", "nombre": "Patricia Gomez", "edad": 42, "turno": "Tarde"},
+  {"puesto": "barista", "nombre": "Lucas Martinez", "edad": 26, "turno": "Manana"},
+  {"puesto": "barista", "nombre": "Sofia Rodriguez", "edad": 28, "turno": "Tarde"},
+  {"puesto": "mozo", "nombre": "Mateo Silva", "edad": 24, "turno": "Manana"},
+  {"puesto": "mozo", "nombre": "Camila Benitez", "edad": 25, "turno": "Manana"},
+  {"puesto": "mozo", "nombre": "Bruno Diaz", "edad": 29, "turno": "Tarde"},
+  {"puesto": "mozo", "nombre": "Elena Paz", "edad": 27, "turno": "Tarde"},
+  {"puesto": "maestranza", "nombre": "Jorge Lopez", "edad": 30, "turno": "Manana"},
+  {"puesto": "maestranza", "nombre": "Marta Quiroga", "edad": 26, "turno": "Tarde"}
+]
+with open('empleados_rh.json', mode='w', encoding='utf-8') as f:
+    json.dump(contenido_json, f, indent=2)
+
+
+# =========================================================
+# 1. CAPA VISUAL Y SIMULACIÓN DE WHATSAPP
 # =========================================================
 def mostrar_interfaz_whatsapp():
     print("\n" + "=" * 55)
@@ -19,7 +58,7 @@ def imprimir_mensaje_bot(texto_respuesta):
     print("-" * 55)
 
 # =========================================================
-# 2. CAPA LÓGICA DE BÚSQUEDA (Procesamiento de Documentos)
+# 2. CAPA LÓGICA DE BÚSQUEDA (Procesamiento Multi-Documento)
 # =========================================================
 def buscar_en_json(consulta):
     with open('empleados_rh.json', mode='r', encoding='utf-8') as archivo:
@@ -56,9 +95,7 @@ def buscar_en_csv(consulta):
 # 3. DISPARADOR DE EVENTOS PRINCIPAL (Bucle Activo)
 # =========================================================
 mostrar_interfaz_whatsapp()
-
 while True:
-    # Simula la entrada de un mensaje de texto del empleado
     consulta_usuario = input("📝 Tu Mensaje (Escribe aqui): ")
     
     if consulta_usuario.lower() == "salir":
@@ -66,9 +103,8 @@ while True:
         break
         
     print("\n⏳ [Disparador]: Mensaje recibido. Procesando base de conocimiento...")
-    time.sleep(0.5) # Simula un pequeno retraso de procesamiento de la IA
+    time.sleep(0.3)
     
-    # CLASIFICADOR INTELIGENTE DE ENTRADA
     if any(puesto in consulta_usuario.lower() for puesto in ["empleado", "puesto", "barista", "mozo", "encargado", "maestranza"]):
         respuesta = buscar_en_json(consulta_usuario)
     elif "protocolo" in consulta_usuario.lower() or "norma" in consulta_usuario.lower() or "higiene" in consulta_usuario.lower():
@@ -76,5 +112,4 @@ while True:
     else:
         respuesta = buscar_en_csv(consulta_usuario)
         
-    # Enviamos el resultado a la funcion que da formato de WhatsApp
     imprimir_mensaje_bot(respuesta)
