@@ -1,115 +1,121 @@
 import csv
 import json
-import time
+import os
+import glob
+import streamlit as st
+import google.generativeai as genai
 
-# =========================================================
-# 0. TRUCO AUTOMÁTICO: CREACIÓN DE ARCHIVOS EN LA NUBE
-# =========================================================
+# ==============================================================================
+# 0. LECTURA Y CONSOLIDACIÓN MULTI-FUENTE (CSV, TXT, JSON)
+# ==============================================================================
+def consolidar_bases_de_datos():
+    """
+    Carga y consolida la información desde los tres archivos corporativos:
+    - datos_empresa.csv (Preguntas Frecuentes / Comercial)
+    - protocolo_operaciones.txt (Normas y Protocolos)
+    - empleados_rh.json (Nómina y Turnos de Personal)
+    """
+    contexto = ""
 
-# 1. Crear el archivo CSV de Atención
-contenido_csv = [
-    ["pregunta", "respuesta"],
-    ["producto mas vendido diciembre 2015", "El producto mas vendido en diciembre de 2015 fue el Smartphone X con 1500 unidades."],
-    ["horario de atencion", "El horario de atencion en el mostrador es de lunes a viernes de 9 a 18 horas."]
-]
-with open('datos_empresa.csv', mode='w', newline='', encoding='utf-8') as f:
-    csv.writer(f).writerows(contenido_csv)
+    # 1. Carga de CSV
+    if os.path.exists('datos_empresa.csv'):
+        contexto += "\n--- FUENTE 1: DATOS COMERCIALES Y FAQ (datos_empresa.csv) ---\n"
+        try:
+            with open('datos_empresa.csv', mode='r', encoding='utf-8') as f:
+                lector = csv.DictReader(f)
+                for fila in lector:
+                    contexto += f"Pregunta: {fila.get('pregunta', '')} | Respuesta: {fila.get('respuesta', '')}\n"
+        except Exception as e:
+            contexto += f"Error al leer CSV: {e}\n"
 
-# 2. Crear el archivo TXT de Operaciones
-contenido_txt = (
-    "protocolo_higiene: El personal debe lavarse las manos cada 30 minutos y usar delantal limpio.\n"
-    "protocolo_servicio: La atencion en el mostrador siempre debe iniciar con un saludo amable.\n"
-    "norma_seguridad: Ante cualquier falla de las maquinas de cafe, avisar de inmediato al supervisor.\n"
-)
-with open('protocolo_operaciones.txt', mode='w', encoding='utf-8') as f:
-    f.write(contenido_txt)
+    # 2. Carga de TXT
+    if os.path.exists('protocolo_operaciones.txt'):
+        contexto += "\n--- FUENTE 2: PROTOCOLOS OPERATIVOS (protocolo_operaciones.txt) ---\n"
+        try:
+            with open('protocolo_operaciones.txt', mode='r', encoding='utf-8') as f:
+                contexto += f.read() + "\n"
+        except Exception as e:
+            contexto += f"Error al leer TXT: {e}\n"
 
-# 3. Crear el archivo JSON de Recursos Humanos
-contenido_json = [
-  {"puesto": "encargado", "nombre": "Claudio Fernandez", "edad": 45, "turno": "Manana"},
-  {"puesto": "encargado", "nombre": "Patricia Gomez", "edad": 42, "turno": "Tarde"},
-  {"puesto": "barista", "nombre": "Lucas Martinez", "edad": 26, "turno": "Manana"},
-  {"puesto": "barista", "nombre": "Sofia Rodriguez", "edad": 28, "turno": "Tarde"},
-  {"puesto": "mozo", "nombre": "Mateo Silva", "edad": 24, "turno": "Manana"},
-  {"puesto": "mozo", "nombre": "Camila Benitez", "edad": 25, "turno": "Manana"},
-  {"puesto": "mozo", "nombre": "Bruno Diaz", "edad": 29, "turno": "Tarde"},
-  {"puesto": "mozo", "nombre": "Elena Paz", "edad": 27, "turno": "Tarde"},
-  {"puesto": "maestranza", "nombre": "Jorge Lopez", "edad": 30, "turno": "Manana"},
-  {"puesto": "maestranza", "nombre": "Marta Quiroga", "edad": 26, "turno": "Tarde"}
-]
-with open('empleados_rh.json', mode='w', encoding='utf-8') as f:
-    json.dump(contenido_json, f, indent=2)
+    # 3. Carga de JSON
+    if os.path.exists('empleados_rh.json'):
+        contexto += "\n--- FUENTE 3: NÓMINA DE PERSONAL DE RRHH (empleados_rh.json) ---\n"
+        try:
+            with open('empleados_rh.json', mode='r', encoding='utf-8') as f:
+                datos_json = json.load(f)
+                contexto += json.dumps(datos_json, ensure_ascii=False, indent=2) + "\n"
+        except Exception as e:
+            contexto += f"Error al leer JSON: {e}\n"
 
+    return contexto
 
-# =========================================================
-# 1. CAPA VISUAL Y SIMULACIÓN DE WHATSAPP
-# =========================================================
-def mostrar_interfaz_whatsapp():
-    print("\n" + "=" * 55)
-    print(" 🟢 CHAT DE WHATSAPP CORPORATIVO - CAFETERÍA CENTRAL ".center(55))
-    print("       (Canal Interno Exclusivo para Colaboradores)       ".center(55))
-    print("=" * 55)
-    print("[Bot]: Hola. El disparador de WhatsApp esta activo.")
-    print("[Bot]: Escribe tu consulta o 'salir' para finalizar.\n")
+base_conocimiento_completa = consolidar_bases_de_datos()
 
-def imprimir_mensaje_bot(texto_respuesta):
-    print("\n📲 [WhatsApp Bot - Cafeteria]:")
-    print(f"   -> \"{texto_respuesta}\"")
-    print("-" * 55)
+# ==============================================================================
+# 1. CONFIGURACIÓN DEL PROMPT DEL SISTEMA (INTERPRETACIONAL Y MULTI-DIALECTAL)
+# ==============================================================================
+SYSTEM_PROMPT = f"""
+Eres un Asistente Virtual Corporativo amigable, extremadamente respetuoso, empático y profesional, diseñado para la Cafetería Central.
+Tu misión es atender consultas de clientes, dueños y colaboradores internos.
 
-# =========================================================
-# 2. CAPA LÓGICA DE BÚSQUEDA (Procesamiento Multi-Documento)
-# =========================================================
-def buscar_en_json(consulta):
-    with open('empleados_rh.json', mode='r', encoding='utf-8') as archivo:
-        datos_empleados = json.load(archivo)
-        encontrados = []
-        for empleado in datos_empleados:
-            if empleado['puesto'] in consulta.lower():
-                texto_empleado = f"   • {empleado['nombre']} (Edad: {empleado['edad']}, Turno: {empleado['turno']})"
-                encontrados.append(texto_empleado)
-        if encontrados:
-            return f"Personal registrado en el puesto '{consulta}':\n" + "\n".join(encontrados)
-    return "No encontre empleados registrados en ese puesto."
+BASE DE CONOCIMIENTO DISPONIBLE:
+{base_conocimiento_completa}
 
-def buscar_en_txt(consulta):
-    with open('protocolo_operaciones.txt', mode='r', encoding='utf-8') as archivo:
-        for linea in archivo:
-            if ":" in linea:
-                clave, contenido = linea.split(":", 1)
-                clave_limpia = clave.strip().lower().replace("_", " ")
-                consulta_limpia = consulta.strip().lower().replace("_", " ")
-                if clave_limpia in consulta_limpia or consulta_limpia in clave_limpia or "higiene" in consulta_limpia:
-                    return f"Protocolo Operacional Activo: {contenido.strip()}"
-    return "Lo siento, ese protocolo o norma no esta registrado en el manual corporativo."
+INSTRUCCIONES DE COMPORTAMIENTO Y COMPRENSIÓN MULTI-DIALECTAL:
+1. COMPRENSIÓN SEMÁNTICA ABIERTA: Debes comprender la INTENCIÓN detrás de la pregunta sin exigir palabras clave exactas. Adapta tu interpretación a cualquier modismo, regionalismo o dialecto (expresiones de Argentina, Bolivia, Paraguay, Chile, Uruguay, etc.).
+2. TONO EDUCADOS Y RESOLUTIVO: Responde siempre con amabilidad, calidez y cortesía.
+3. PREGUNTAS AMBIGUAS: Si la pregunta no es totalmente clara pero intuyes sobre qué consulta, responde amablemente y pide con respeto que te confirme o reformule si necesita más detalles.
+4. AUSENCIA DE INFORMACIÓN: Si la consulta aborda un tema que NO está contemplado en ninguna de las fuentes de conocimiento, responde de manera muy educada indicando que no posees el registro exacto y sugiere comunicarse directamente con el Departamento de Recursos Humanos o la Administración.
+"""
 
-def buscar_en_csv(consulta):
-    with open('datos_empresa.csv', mode='r', encoding='utf-8') as archivo:
-        lector_csv = csv.DictReader(archivo)
-        for fila in lector_csv:
-            if fila['pregunta'].lower() in consulta.lower():
-                return f"Informacion Comercial: {fila['respuesta']}"
-    return "Lo siento, no tengo esa informacion en mis documentos corporativos actuales."
+# ==============================================================================
+# 2. INTERFAZ DE USUARIO EN STREAMLIT
+# ==============================================================================
+st.set_page_config(page_title="Chatbot Corporativo - Cafetería", page_icon="☕", layout="centered")
 
-# =========================================================
-# 3. DISPARADOR DE EVENTOS PRINCIPAL (Bucle Activo)
-# =========================================================
-mostrar_interfaz_whatsapp()
-while True:
-    consulta_usuario = input("📝 Tu Mensaje (Escribe aqui): ")
-    
-    if consulta_usuario.lower() == "salir":
-        print("\n[Bot]: Desconectando el servicio de WhatsApp de la cafeteria... ¡Adios!")
-        break
-        
-    print("\n⏳ [Disparador]: Mensaje recibido. Procesando base de conocimiento...")
-    time.sleep(0.3)
-    
-    if any(puesto in consulta_usuario.lower() for puesto in ["empleado", "puesto", "barista", "mozo", "encargado", "maestranza"]):
-        respuesta = buscar_en_json(consulta_usuario)
-    elif "protocolo" in consulta_usuario.lower() or "norma" in consulta_usuario.lower() or "higiene" in consulta_usuario.lower():
-        respuesta = buscar_en_txt(consulta_usuario)
+st.title("☕ Asistente Virtual Corporativo")
+st.caption("🟢 Canal de Atención e Información Interna - Cafetería Central")
+
+# Configuración de API Key de Gemini
+try:
+    if "GEMINI_API_KEY" in st.secrets:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    elif os.environ.get("GEMINI_API_KEY"):
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
     else:
-        respuesta = buscar_en_csv(consulta_usuario)
-        
-    imprimir_mensaje_bot(respuesta)
+        st.warning("⚠️ Configura GEMINI_API_KEY en st.secrets de Streamlit Cloud.")
+except Exception as e:
+    st.error(f"Error al inicializar la clave API: {e}")
+
+# Historial de conversación
+if "mensajes" not in st.session_state:
+    st.session_state.mensajes = [
+        {"role": "assistant", "content": "¡Hola! Soy el asistente de la Cafetería Central. ¿En qué puedo ayudarte hoy?"}
+    ]
+
+# Renderizar chat
+for msg in st.session_state.mensajes:
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
+
+# Entrada de usuario
+if consulta := st.chat_input("Escribe tu consulta aquí..."):
+    st.session_state.mensajes.append({"role": "user", "content": consulta})
+    with st.chat_message("user"):
+        st.write(consulta)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Procesando consulta en la base de datos..."):
+            try:
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-flash",
+                    system_instruction=SYSTEM_PROMPT
+                )
+                
+                response = model.generate_content(consulta)
+                respuesta_texto = response.text
+                
+                st.write(respuesta_texto)
+                st.session_state.mensajes.append({"role": "assistant", "content": respuesta_texto})
+            except Exception as err:
+                st.error("Ocurrió un inconveniente al procesar la solicitud con el modelo de IA.")
