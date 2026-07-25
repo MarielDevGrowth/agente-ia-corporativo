@@ -1,3 +1,7 @@
 protocolo_higiene: El personal debe lavarse las manos cada 30 minutos y usar delantal limpio.
 protocolo_servicio: La atencion en el mostrador siempre debe iniciar con un saludo amable.
 norma_seguridad: Ante cualquier falla de las maquinas de cafe, avisar de inmediato al supervisor.
+norma_ausencias_enfermedad: Ante una ausencia por enfermedad o imprevisto medico, el empleado debe notificar a RRHH o a su supervisor dentro de las primeras 3 horas de iniciado su turno. Es obligatorio presentar certificado medico con diagnostico y alta medica al reincorporarse.
+norma_turnos_trabajo: Los horarios de trabajo internos son: Turno Manana (Lunes a Viernes de 08:30 a 16:30 hs), Turno Tarde (Lunes a Viernes de 12:30 a 20:30 hs) y Turno Sabados rotativo (09:00 a 17:00 hs).
+norma_aguinaldo: El primer medio aguinaldo (SAC) se abona en la ultima jornada laboral de Junio; el segundo medio aguinaldo se paga antes del 18 de Diciembre.
+norma_vacaciones: Las vacaciones deben solicitarse con al menos 30 dias de anticipacion a RRHH. El periodo de goce es de Octubre a Abril.
