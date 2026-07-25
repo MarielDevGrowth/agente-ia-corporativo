@@ -3,7 +3,7 @@ import json
 import os
 import glob
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # ==============================================================================
 # 0. LECTURA Y CONSOLIDACIÓN MULTI-FUENTE (CSV, TXT, JSON)
@@ -76,17 +76,16 @@ st.set_page_config(page_title="Chatbot Corporativo - Cafetería", page_icon="☕
 st.title("☕ Asistente Virtual Corporativo")
 st.caption("🟢 Canal de Atención e Información Interna - Cafetería Central")
 
-# Configuración de API Key de Gemini
+# Inicialización del cliente de Gemini
 try:
-    if "GEMINI_API_KEY" in st.secrets:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    elif os.environ.get("GEMINI_API_KEY"):
-        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+    api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+    if api_key:
+        client = genai.Client(api_key=api_key)
     else:
         st.warning("⚠️ Configura GEMINI_API_KEY en st.secrets de Streamlit Cloud.")
 except Exception as e:
     st.error(f"Error al inicializar la clave API: {e}")
-
+    
 # Historial de conversación
 if "mensajes" not in st.session_state:
     st.session_state.mensajes = [
@@ -104,16 +103,25 @@ if consulta := st.chat_input("Escribe tu consulta aquí..."):
     with st.chat_message("user"):
         st.write(consulta)
 
-    with st.chat_message("assistant"):
+   with st.chat_message("assistant"):
         with st.spinner("Procesando consulta en la base de datos..."):
             try:
-                model = genai.GenerativeModel(
-                    model_name="gemini-2.0-flash",
-                    system_instruction=SYSTEM_PROMPT
+                # Inicializamos el cliente con la API Key guardada en Secrets
+                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
+                
+                # Generamos la respuesta con la sintaxis oficial de google-genai
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=consulta,
+                    config={"system_instruction": SYSTEM_PROMPT}
                 )
                 
-                response = model.generate_content(consulta)
                 respuesta_texto = response.text
+                
+                st.markdown(respuesta_texto)
+                st.session_state.messages.append({"role": "assistant", "content": respuesta_texto})
+            except Exception as e:
+                st.error("Ocurrió un inconveniente al procesar la solicitud con el modelo de IA.")
                 
                 st.write(respuesta_texto)
                 st.session_state.mensajes.append({"role": "assistant", "content": respuesta_texto})
