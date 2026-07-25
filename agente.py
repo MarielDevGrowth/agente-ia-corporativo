@@ -1,7 +1,6 @@
 import csv
 import json
 import os
-import glob
 import streamlit as st
 from google import genai
 
@@ -77,6 +76,7 @@ st.title("☕ Asistente Virtual Corporativo")
 st.caption("🟢 Canal de Atención e Información Interna - Cafetería Central")
 
 # Inicialización del cliente de Gemini
+client = None
 try:
     api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if api_key:
@@ -85,7 +85,7 @@ try:
         st.warning("⚠️ Configura GEMINI_API_KEY en st.secrets de Streamlit Cloud.")
 except Exception as e:
     st.error(f"Error al inicializar la clave API: {e}")
-    
+
 # Historial de conversación
 if "mensajes" not in st.session_state:
     st.session_state.mensajes = [
@@ -103,27 +103,22 @@ if consulta := st.chat_input("Escribe tu consulta aquí..."):
     with st.chat_message("user"):
         st.write(consulta)
 
-   with st.chat_message("assistant"):
+    with st.chat_message("assistant"):
         with st.spinner("Procesando consulta en la base de datos..."):
             try:
-                # Inicializamos el cliente con la API Key guardada en Secrets
-                client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
-                
-                # Generamos la respuesta con la sintaxis oficial de google-genai
+                if not client:
+                    api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+                    client = genai.Client(api_key=api_key)
+
                 response = client.models.generate_content(
                     model="gemini-2.0-flash",
                     contents=consulta,
                     config={"system_instruction": SYSTEM_PROMPT}
                 )
-                
+
                 respuesta_texto = response.text
-                
+
                 st.markdown(respuesta_texto)
-                st.session_state.messages.append({"role": "assistant", "content": respuesta_texto})
-            except Exception as e:
-                st.error("Ocurrió un inconveniente al procesar la solicitud con el modelo de IA.")
-                
-                st.write(respuesta_texto)
                 st.session_state.mensajes.append({"role": "assistant", "content": respuesta_texto})
-            except Exception as err:
+            except Exception as e:
                 st.error("Ocurrió un inconveniente al procesar la solicitud con el modelo de IA.")
