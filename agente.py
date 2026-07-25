@@ -108,7 +108,7 @@ if consulta := st.chat_input("Escribe tu consulta aquí..."):
         with st.spinner("Procesando consulta en la base de datos..."):
             try:
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash",
+                    model_name="gemini-2.0-flash",
                     system_instruction=SYSTEM_PROMPT
                 )
                 
