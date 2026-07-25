@@ -1,5 +1,5 @@
 ☕ Agente Virtual Corporativo - Cafetería Central
-Este proyecto consiste en el desarrollo de un Agente Virtual Inteligente integrado con Google Generative AI (Gemini 1.5 Flash) y Streamlit, diseñado para actuar como canal de atención tanto para clientes externos como para personal interno (RRHH y Operaciones) de una cafetería.
+Este proyecto consiste en el desarrollo de un Agente Virtual Inteligente integrado con Google Generative AI (google-genai con Gemini 2.0 Flash) y Streamlit, diseñado para actuar como canal de atención tanto para clientes externos como para personal interno (RRHH y Operaciones) de una cafetería.
 
 El agente destaca por su capacidad de comprensión semántica multi-dialectal, permitiendo interpretar consultas en diversos regionalismos y modismos de Latinoamérica sin exigir coincidencias exactas de texto.
 
@@ -33,4 +33,4 @@ Configurar la variable de entorno GEMINI_API_KEY:
 export GEMINI_API_KEY="tu_api_key_aqui"
 
 Iniciar la aplicación con Streamlit:
-streamlit run app.py
+streamlit run agente.py
