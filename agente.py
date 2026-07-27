@@ -121,4 +121,4 @@ if consulta := st.chat_input("Escribe tu consulta aquí..."):
                 st.markdown(respuesta_texto)
                 st.session_state.mensajes.append({"role": "assistant", "content": respuesta_texto})
             except Exception as e:
-                st.error("Ocurrió un inconveniente al procesar la solicitud con el modelo de IA.")
+                st.error(f"Error detectado: {e}")
