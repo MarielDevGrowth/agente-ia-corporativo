@@ -2,19 +2,12 @@ import csv
 import json
 import os
 import streamlit as st
-from google import genai
-from google.genai import types
+from groq import Groq
 
 # ==============================================================================
 # 0. LECTURA Y CONSOLIDACIÓN MULTI-FUENTE (CSV, TXT, JSON)
 # ==============================================================================
 def consolidar_bases_de_datos():
-    """
-    Carga y consolida la información desde los tres archivos corporativos:
-    - datos_empresa.csv (Preguntas Frecuentes / Comercial)
-    - protocolo_operaciones.txt (Normas y Protocolos)
-    - empleados_rh.json (Nómina y Turnos de Personal)
-    """
     contexto = ""
 
     # 1. Carga de CSV
@@ -52,7 +45,7 @@ def consolidar_bases_de_datos():
 base_conocimiento_completa = consolidar_bases_de_datos()
 
 # ==============================================================================
-# 1. CONFIGURACIÓN DEL PROMPT DEL SISTEMA (INTERPRETACIONAL Y MULTI-DIALECTAL)
+# 1. CONFIGURACIÓN DEL PROMPT DEL SISTEMA
 # ==============================================================================
 SYSTEM_PROMPT = f"""
 Eres un Asistente Virtual Corporativo amigable, extremadamente respetuoso, empático y profesional, diseñado para la Cafetería Central.
@@ -76,19 +69,12 @@ st.set_page_config(page_title="Chatbot Corporativo - Cafetería", page_icon="☕
 st.title("☕ Asistente Virtual Corporativo")
 st.caption("🟢 Canal de Atención e Información Interna - Cafetería Central")
 
-# Inicialización del cliente de Gemini
-client = None
-try:
-    api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
-    if api_key:
-        client = genai.Client(
-            api_key=api_key,
-            http_options=types.HttpOptions(api_version="v1")
-        )
-    else:
-        st.warning("⚠️ Configura GEMINI_API_KEY en st.secrets de Streamlit Cloud.")
-except Exception as e:
-    st.error(f"Error al inicializar la clave API: {e}")
+# Inicialización del cliente de Groq
+api_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=api_key) if api_key else None
+
+if not api_key:
+    st.warning("⚠️ Configura GROQ_API_KEY en st.secrets de Streamlit Cloud.")
 
 # Historial de conversación
 if "mensajes" not in st.session_state:
@@ -110,20 +96,16 @@ if consulta := st.chat_input("Escribe tu consulta aquí..."):
     with st.chat_message("assistant"):
         with st.spinner("Procesando consulta en la base de datos..."):
             try:
-                if not client:
-                    api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
-                    client = genai.Client(
-                        api_key=api_key,
-                        http_options=types.HttpOptions(api_version="v1")
-                    )
-
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=consulta,
-                    config={"system_instruction": SYSTEM_PROMPT}
+                response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": consulta}
+                    ],
+                    temperature=0.3
                 )
 
-                respuesta_texto = response.text
+                respuesta_texto = response.choices[0].message.content
 
                 st.markdown(respuesta_texto)
                 st.session_state.mensajes.append({"role": "assistant", "content": respuesta_texto})
