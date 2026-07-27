@@ -3,6 +3,7 @@ import json
 import os
 import streamlit as st
 from google import genai
+from google.genai import types
 
 # ==============================================================================
 # 0. LECTURA Y CONSOLIDACIÓN MULTI-FUENTE (CSV, TXT, JSON)
@@ -80,7 +81,10 @@ client = None
 try:
     api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if api_key:
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(api_version="v1")
+        )
     else:
         st.warning("⚠️ Configura GEMINI_API_KEY en st.secrets de Streamlit Cloud.")
 except Exception as e:
@@ -108,10 +112,13 @@ if consulta := st.chat_input("Escribe tu consulta aquí..."):
             try:
                 if not client:
                     api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
-                    client = genai.Client(api_key=api_key)
+                    client = genai.Client(
+                        api_key=api_key,
+                        http_options=types.HttpOptions(api_version="v1")
+                    )
 
                 response = client.models.generate_content(
-                    model="gemini-1.5-flash",
+                    model="gemini-2.0-flash",
                     contents=consulta,
                     config={"system_instruction": SYSTEM_PROMPT}
                 )
